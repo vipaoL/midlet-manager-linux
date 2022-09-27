@@ -31,71 +31,50 @@ public class MIDletSettings extends JPanel {
     MIDletSettings(String midletName) {
         super(new GridBagLayout());
         
-        int i = 0;
-        String iconPath = MIDletManager.dir + "apps/" + midletName + ".png";
-        Icon icon = null;
-        try {
-            icon = new ImageIcon(ImageIO.read(new File(iconPath)).getScaledInstance(192, 192, 0));
-        } catch (IOException ex) { }
-        JLabel label = new JLabel(midletName, icon, JLabel.CENTER);
+        int btnCount = 0;
+        
+        // icon and name
+        JLabel label = new JLabel(midletName, JLabel.CENTER);
         label.setFont(new Font(label.getFont().getFontName(), Font.PLAIN, label.getFont().getSize() * 2));
-        GridBagConstraints gbc = new GridBagConstraints(
-                0, i, //cell for top left corner
-                1, 1, //cells to span
-                1, 1, //spacing wieght
-                GridBagConstraints.WEST, //where to anchor the component in the cell
-                GridBagConstraints.HORIZONTAL, //how to fill extra space
-                new Insets(10, 10, 10, 10), //insets for the cell
-                0, 0);                          //additional padding
-        add(label, gbc);
-        i++;
         
-        JPanel separator = new JPanel();
-        separator.setPreferredSize(new Dimension(200, 0));
-        gbc = new GridBagConstraints(
-                0, i, //cell for top left corner
-                1, 1, //cells to span
-                1, 1, //spacing wieght
-                GridBagConstraints.WEST, //where to anchor the component in the cell
-                GridBagConstraints.HORIZONTAL, //how to fill extra space
-                new Insets(0, 0, 0, 0), //insets for the cell
-                0, 0);                          //additional padding
-        //add(separator, gbc);
-        //i++;
+        String iconPath = MIDletManager.WORKDIR + "apps/" + midletName + ".png";
+        try {
+            ImageIcon appIcon = new ImageIcon(ImageIO.read(
+                    new File(iconPath)).getScaledInstance(192, 192, 0));
+            label.setIcon(appIcon);
+        } catch (IOException ex) {
+            System.err.println("Can't load app icon: " + iconPath);
+        }
+        add(label, getGBC(btnCount, 10, 1));
+        btnCount++;
         
+        // Button to open the app
         JButton openBtn = new JButton("Open");
         openBtn.setFont(new Font(openBtn.getFont().getFontName(), Font.PLAIN, openBtn.getFont().getSize() * 2));
         openBtn.setPreferredSize(new Dimension(200, 60));
         openBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {
-                    new ProcessBuilder(MIDletManager.dir + "wrapper-files/emu.sh", midletName).start();
+                    new ProcessBuilder(MIDletManager.WORKDIR + "wrapper-files/emu.sh", midletName).start();
                 } catch (IOException ex) {
                     Logger.getLogger(MIDletSettings.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
         });
-        gbc = new GridBagConstraints(
-                0, i, //cell for top left corner
-                1, 1, //cells to span
-                1, 0, //spacing wieght
-                GridBagConstraints.WEST, //where to anchor the component in the cell
-                GridBagConstraints.HORIZONTAL, //how to fill extra space
-                new Insets(0, 0, 0, 0), //insets for the cell
-                0, 0);                          //additional padding
-        add(openBtn, gbc);
-        i++;
+        add(openBtn, getGBC(btnCount, 0, 0));
+        btnCount++;
         
+        // Button to delete the app
         JButton deleteBtn = new JButton("Delete");
         deleteBtn.setFont(new Font(deleteBtn.getFont().getFontName(), Font.PLAIN, deleteBtn.getFont().getSize() * 2));
         deleteBtn.setPreferredSize(new Dimension(200, 60));
         deleteBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if (!MIDletManager.showDialog("", "Are you sure to delete \"" + midletName + "\"?")) {
+                if (!MIDletManager.showConfirmDialog("", "Are you sure to delete \"" + midletName + "\"?")) {
                     return;
                 }
                 try {
-                    new ProcessBuilder(MIDletManager.dir + "wrapper-files/uninstall-j2me-app.sh", midletName).start();
+                    new ProcessBuilder(MIDletManager.WORKDIR + "wrapper-files/uninstall-j2me-app.sh", midletName).start();
                     try {
                         Thread.sleep(200);
                     } catch (InterruptedException ex) {
@@ -107,17 +86,10 @@ public class MIDletSettings extends JPanel {
                 }
             }
         });
-        gbc = new GridBagConstraints(
-                0, i, //cell for top left corner
-                1, 1, //cells to span
-                1, 0, //spacing wieght
-                GridBagConstraints.WEST, //where to anchor the component in the cell
-                GridBagConstraints.HORIZONTAL, //how to fill extra space
-                new Insets(0, 0, 0, 0), //insets for the cell
-                0, 0);                          //additional padding
-        add(deleteBtn, gbc);
-        i++;
+        add(deleteBtn, getGBC(btnCount, 0, 0));
+        btnCount++;
         
+        // Button to main menu
         JButton backBtn = new JButton("Back");
         backBtn.setFont(new Font(backBtn.getFont().getFontName(), Font.PLAIN, backBtn.getFont().getSize() * 2));
         backBtn.setPreferredSize(new Dimension(200, 60));
@@ -126,16 +98,19 @@ public class MIDletSettings extends JPanel {
                 MIDletManager.setActivity(new MIDletList());
             }
         });
-        gbc = new GridBagConstraints(
+        add(backBtn, getGBC(btnCount, 0, 0));
+        btnCount++;
+    }
+
+    private GridBagConstraints getGBC(int i, int insets, int spacingWeight) {
+        return new GridBagConstraints(
                 0, i, //cell for top left corner
                 1, 1, //cells to span
-                1, 0, //spacing wieght
+                1, spacingWeight, //spacing weight
                 GridBagConstraints.WEST, //where to anchor the component in the cell
                 GridBagConstraints.HORIZONTAL, //how to fill extra space
-                new Insets(0, 0, 0, 0), //insets for the cell
+                new Insets(insets, insets, insets, insets), //insets for the cell
                 0, 0);                          //additional padding
-        add(backBtn, gbc);
-        i++;
     }
 
 }
