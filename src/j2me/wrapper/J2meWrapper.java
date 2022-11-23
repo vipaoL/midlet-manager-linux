@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Main.java to edit this template
  */
-package j2me.wrapper.linux;
+package j2me.wrapper;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -13,7 +13,9 @@ import javax.swing.UnsupportedLookAndFeelException;
  *
  * @author vipaol
  */
-public class J2meWrapperLinux {
+public class J2meWrapper {
+    
+    static String OS_NAME = System.getProperty("os.name");
 
     /**
      * @param args the command line arguments
@@ -27,12 +29,19 @@ public class J2meWrapperLinux {
         } catch (UnsupportedLookAndFeelException ex) {
         }
         
-        if (args.length == 0) {
-            new MIDletManager(null);
-        } else if (args[0].equals("get-dimensions")) {
-            new WindowDimensionsGetter();
-        } else {
-            new MIDletManager(args[0]);
+        switch (args.length) {
+            case 0:
+                new MIDletManager("");
+                break;
+            case 1:
+                if (args[0].equals("get-dimensions")) {
+                    new WindowDimensionsGetter();
+                } else {
+                    new MIDletManager(args[0]);
+                }   break;
+            default:
+                new MIDletManager(args);
+                break;
         }
     }
 

@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package j2me.wrapper.linux;
+package j2me.wrapper;
 
 import java.awt.Canvas;
 import java.awt.Color;
@@ -22,7 +22,7 @@ public class WindowDimensionsGetter extends JFrame implements Runnable {
     
     public WindowDimensionsGetter() {
         System.out.println("Getting window size...");
-        setSize(300, 400);
+        setSize(480, 640);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         canvas.setBackground(Color.black);
         add(canvas);
@@ -41,7 +41,7 @@ public class WindowDimensionsGetter extends JFrame implements Runnable {
         System.out.println(w + " " + h);
         
         try {
-            File f = new File(MIDletManager.WORKDIR + "wrapper-files/config/window-dimensions.txt");
+            File f = new File(MIDletManager.EMU_ROOT + "wrapper-files/config/window-dimensions.txt");
             if (!f.exists()) {
                 if (!f.getParentFile().exists()) {
                     f.getParentFile().mkdirs();

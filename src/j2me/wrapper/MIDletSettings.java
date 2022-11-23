@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package j2me.wrapper.linux;
+package j2me.wrapper;
 
 import java.awt.Dimension;
 import java.awt.Font;
@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
-import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -37,7 +36,7 @@ public class MIDletSettings extends JPanel {
         JLabel label = new JLabel(midletName, JLabel.CENTER);
         label.setFont(new Font(label.getFont().getFontName(), Font.PLAIN, label.getFont().getSize() * 2));
         
-        String iconPath = MIDletManager.WORKDIR + "apps/" + midletName + ".png";
+        String iconPath = MIDletManager.APPS_DIR + midletName + ".png";
         try {
             ImageIcon appIcon = new ImageIcon(ImageIO.read(
                     new File(iconPath)).getScaledInstance(192, 192, 0));
@@ -50,12 +49,12 @@ public class MIDletSettings extends JPanel {
         
         // Button to open the app
         JButton openBtn = new JButton("Open");
-        openBtn.setFont(new Font(openBtn.getFont().getFontName(), Font.PLAIN, openBtn.getFont().getSize() * 2));
         openBtn.setPreferredSize(new Dimension(200, 60));
+        openBtn.setFont(new Font(openBtn.getFont().getFontName(), Font.PLAIN, openBtn.getPreferredSize().height / 2));
         openBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {
-                    new ProcessBuilder(MIDletManager.WORKDIR + "wrapper-files/emu.sh", midletName).start();
+                    new ProcessBuilder(MIDletManager.EMU_ROOT + "wrapper-files/emu.sh", midletName).start();
                 } catch (IOException ex) {
                     Logger.getLogger(MIDletSettings.class.getName()).log(Level.SEVERE, null, ex);
                 }
@@ -66,21 +65,21 @@ public class MIDletSettings extends JPanel {
         
         // Button to delete the app
         JButton deleteBtn = new JButton("Delete");
-        deleteBtn.setFont(new Font(deleteBtn.getFont().getFontName(), Font.PLAIN, deleteBtn.getFont().getSize() * 2));
         deleteBtn.setPreferredSize(new Dimension(200, 60));
+        deleteBtn.setFont(new Font(deleteBtn.getFont().getFontName(), Font.PLAIN, deleteBtn.getPreferredSize().height / 2));
         deleteBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (!MIDletManager.showConfirmDialog("", "Are you sure to delete \"" + midletName + "\"?")) {
                     return;
                 }
                 try {
-                    new ProcessBuilder(MIDletManager.WORKDIR + "wrapper-files/uninstall-j2me-app.sh", midletName).start();
+                    new ProcessBuilder(MIDletManager.EMU_ROOT + "wrapper-files/uninstall-j2me-app.sh", midletName).start();
                     try {
                         Thread.sleep(200);
                     } catch (InterruptedException ex) {
                         Logger.getLogger(MIDletSettings.class.getName()).log(Level.SEVERE, null, ex);
                     }
-                    MIDletManager.setActivity(new MIDletList());
+                    MIDletManager.setActivity(new MIDletList(), "Installed MIDlets");
                 } catch (IOException ex) {
                     Logger.getLogger(MIDletSettings.class.getName()).log(Level.SEVERE, null, ex);
                 }
@@ -91,11 +90,11 @@ public class MIDletSettings extends JPanel {
         
         // Button to main menu
         JButton backBtn = new JButton("Back");
-        backBtn.setFont(new Font(backBtn.getFont().getFontName(), Font.PLAIN, backBtn.getFont().getSize() * 2));
         backBtn.setPreferredSize(new Dimension(200, 60));
+        backBtn.setFont(new Font(backBtn.getFont().getFontName(), Font.PLAIN, backBtn.getPreferredSize().height / 2));
         backBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                MIDletManager.setActivity(new MIDletList());
+                MIDletManager.setActivity(new MIDletList(), "Installed MIDlets");
             }
         });
         add(backBtn, getGBC(btnCount, 0, 0));
