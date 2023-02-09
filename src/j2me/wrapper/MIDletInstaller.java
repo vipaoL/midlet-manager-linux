@@ -50,8 +50,18 @@ public class MIDletInstaller {
     String midletDescription = "";
     boolean isAlreadyInstalled = false;
     File tmpFile = createTempFile("midlet-installer-buffer");
+    boolean doNotAskInstall = false;
 
-    public MIDletInstaller(String path) throws IOException {
+    public MIDletInstaller(String[] args) throws IOException {
+        String path;
+        if (args.length == 2) {
+            path = args[1];
+        } else {
+            path = args[2];
+            if (args[1].equals("-y")) {
+                doNotAskInstall = true;
+            }
+        }
         System.out.println(J2meWrapper.OS_NAME);
         jarPath = Paths.get(path);
         Attributes manifestValues;
@@ -63,7 +73,7 @@ public class MIDletInstaller {
             Logger.getLogger(MIDletInstaller.class.getName()).log(Level.SEVERE, null, ex);
             throw new IOException("Could not read jar");
         } catch (NullPointerException ex) {
-            throw new NullPointerException("Could not read manufest");
+            throw new NullPointerException("Could not read manifest");
         }
         midletName = manifestValues.getValue("MIDlet-Name");
         midletVendor = manifestValues.getValue("MIDlet-Vendor");
@@ -98,13 +108,23 @@ public class MIDletInstaller {
             Logger.getLogger(MIDletInstaller.class.getName()).log(Level.SEVERE, null, ex);
         }
         
-        String successTitle = "Install " + midletName;
-        if (isAlreadyInstalled) {
-            successTitle = "Update " + midletName;
+        if (doNotAskInstall) {
+            System.out.println("Set \"-y\", installing without dialog");
+            install();
+            MIDletManager.createMIDletShortcut(midletName);
+            System.out.println("Done!");
+            System.exit(0);
         }
-        MIDletManager.inst.setTitle(successTitle);
+        
+        if (!isAlreadyInstalled) {
+            MIDletManager.inst.setTitle("Install " + midletName);
+        } else {
+            MIDletManager.inst.setTitle("Update " + midletName);
+        }
+        
         MIDletManager.inst.setContentPane((JPanel) new InstallerScreen());
         MIDletManager.inst.pack();
+        MIDletManager.inst.setVisible(true);
     }
 
     void install() {

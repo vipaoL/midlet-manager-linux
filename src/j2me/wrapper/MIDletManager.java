@@ -58,7 +58,6 @@ public class MIDletManager extends JFrame {
         } else {
             setActivity(new MIDletSettings(app), app + " - settings");
         }
-        setVisible(true);
     }
 
     public MIDletManager(String[] args) {
@@ -69,7 +68,7 @@ public class MIDletManager extends JFrame {
         String command = args[0];
         if (command.equals("install")) {
             try {
-                new MIDletInstaller(args[1]);
+                new MIDletInstaller(args);
             } catch (IOException | NullPointerException ex) {
                 String errorMessage = ex.getMessage();
                 errorMessage += "\n\nDebug info:\n";
@@ -81,7 +80,6 @@ public class MIDletManager extends JFrame {
                 System.exit(1);
             }
         }
-        setVisible(true);
     }
 
     public static void setActivity(JPanel panel, String title) {
@@ -98,6 +96,7 @@ public class MIDletManager extends JFrame {
         listScroller.setHorizontalScrollBar(null);
         inst.add(listScroller);
         inst.pack();
+        inst.setVisible(true);
     }
 
     public static boolean showConfirmDialog(String title, String question) {
