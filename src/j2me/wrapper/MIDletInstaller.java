@@ -115,6 +115,7 @@ public class MIDletInstaller {
             System.out.println("Done!");
             System.exit(0);
         }
+        new MIDletManager();
         
         if (!isAlreadyInstalled) {
             MIDletManager.inst.setTitle("Install " + midletName);
@@ -127,7 +128,7 @@ public class MIDletInstaller {
         MIDletManager.inst.setVisible(true);
     }
 
-    void install() {
+    boolean install() {
         assert (!midletName.equals(""));
 
         try {
@@ -143,16 +144,11 @@ public class MIDletInstaller {
                 MIDletManager.showError("Failed to extract icon " + iconPath);
             }
             Files.copy(jarPath, Paths.get(MIDletManager.APPS_DIR).resolve(midletName + ".jar"), StandardCopyOption.REPLACE_EXISTING);
-            String successTitle = "Installed successfully";
-            if (isAlreadyInstalled) {
-                successTitle = "Updated successfully";
-            }
-            MIDletManager.inst.setTitle(successTitle);
-            MIDletManager.inst.setContentPane(new SuccessScreen(midletName, Paths.get(MIDletManager.APPS_DIR).resolve(midletName + ".png").toFile()));
-            MIDletManager.inst.pack();
+            return true;
         } catch (IOException ex) {
             Logger.getLogger(MIDletInstaller.class.getName()).log(Level.SEVERE, null, ex);
             MIDletManager.showError("Failed to copy jar");
+            return false;
         }
     }
 
@@ -232,7 +228,14 @@ public class MIDletInstaller {
             installBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
             installBtn.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    install();
+                    if (install()) {
+                        MIDletManager.inst.setTitle("Installed successfully");
+                        if (isAlreadyInstalled) {
+                            MIDletManager.inst.setTitle("Updated successfully");
+                        }
+                        MIDletManager.inst.setContentPane(new SuccessScreen(midletName, Paths.get(MIDletManager.APPS_DIR).resolve(midletName + ".png").toFile()));
+                        MIDletManager.inst.pack();
+                    }
                     MIDletManager.createMIDletShortcut(midletName);
                 }
             });

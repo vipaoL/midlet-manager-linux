@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import jdk.jfr.internal.SecuritySupport;
 
 /**
  *
@@ -72,7 +73,7 @@ public class FileUtils {
         InputStream stream = null;
         OutputStream resStreamOut = null;
         try {
-            stream = MIDletManager.inst.getClass().getResourceAsStream(resourceName); //note that each / is a directory down in the "jar tree" been the jar the root of the tree
+            stream = (new FileUtils()).getClass().getResourceAsStream(resourceName); //note that each / is a directory down in the "jar tree" been the jar the root of the tree
             if(stream == null) {
                 throw new NullPointerException("Cannot get resource \"" + resourceName + "\" from Jar file.");
             }

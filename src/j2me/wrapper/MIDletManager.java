@@ -60,26 +60,11 @@ public class MIDletManager extends JFrame {
         }
     }
 
-    public MIDletManager(String[] args) {
+    public MIDletManager() {
         setLayout(new GridLayout(1, 1));
         inst = this;
         setSize(300, 400);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        String command = args[0];
-        if (command.equals("install")) {
-            try {
-                new MIDletInstaller(args);
-            } catch (IOException | NullPointerException ex) {
-                String errorMessage = ex.getMessage();
-                errorMessage += "\n\nDebug info:\n";
-                StackTraceElement[] stackTrace = ex.getStackTrace();
-                for (int i = 0; i < stackTrace.length; i++) {
-                    errorMessage += stackTrace[i].toString() + "\n";
-                }
-                showError(errorMessage);
-                System.exit(1);
-            }
-        }
     }
 
     public static void setActivity(JPanel panel, String title) {
@@ -104,12 +89,17 @@ public class MIDletManager extends JFrame {
     }
 
     public static void showInfo(String message) {
-        JOptionPane.showMessageDialog(inst, message);
+        System.out.println(message);
+        if (!J2meWrapper.headlessMode) {
+            JOptionPane.showMessageDialog(inst, message);
+        }
     }
 
     public static void showError(String message) {
         System.err.println(message);
-        JOptionPane.showMessageDialog(inst, message, "error", JOptionPane.ERROR_MESSAGE);
+        if (!J2meWrapper.headlessMode) {
+            JOptionPane.showMessageDialog(inst, message, "error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     public static boolean createMIDletShortcut(String midletName) {

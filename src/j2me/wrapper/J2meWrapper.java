@@ -4,8 +4,8 @@
  */
 package j2me.wrapper;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import static j2me.wrapper.MIDletManager.showError;
+import java.io.IOException;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
@@ -14,8 +14,9 @@ import javax.swing.UnsupportedLookAndFeelException;
  * @author vipaol
  */
 public class J2meWrapper {
-    
+
     static String OS_NAME = System.getProperty("os.name");
+    static boolean headlessMode = false;
 
     /**
      * @param args the command line arguments
@@ -28,7 +29,7 @@ public class J2meWrapper {
         } catch (IllegalAccessException ex) {
         } catch (UnsupportedLookAndFeelException ex) {
         }
-        
+
         switch (args.length) {
             case 0:
                 new MIDletManager("");
@@ -38,9 +39,24 @@ public class J2meWrapper {
                     new WindowDimensionsGetter();
                 } else {
                     new MIDletManager(args[0]);
-                }   break;
+                }
+                break;
             default:
-                new MIDletManager(args);
+                String command = args[0];
+                if (command.equals("install")) {
+                    try {
+                        new MIDletInstaller(args);
+                    } catch (IOException | NullPointerException ex) {
+                        String errorMessage = ex.getMessage();
+                        errorMessage += "\n\nDebug info:\n";
+                        StackTraceElement[] stackTrace = ex.getStackTrace();
+                        for (int i = 0; i < stackTrace.length; i++) {
+                            errorMessage += stackTrace[i].toString() + "\n";
+                        }
+                        showError(errorMessage);
+                        System.exit(1);
+                    }
+                }
                 break;
         }
     }
