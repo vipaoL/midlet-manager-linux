@@ -11,7 +11,6 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -27,25 +26,23 @@ import javax.swing.JPanel;
  */
 public class MIDletSettings extends JPanel {
 
-    MIDletSettings(String midletName) {
+    MIDletSettings(String appName) {
         super(new GridBagLayout());
         
-        int btnCount = 0;
+        int elementCount = 0;
         
         // icon and name
-        JLabel label = new JLabel(midletName, JLabel.CENTER);
+        JLabel label = new JLabel(appName, JLabel.CENTER);
         label.setFont(new Font(label.getFont().getFontName(), Font.PLAIN, label.getFont().getSize() * 2));
         
-        String iconPath = MIDletManager.APPS_DIR + midletName + ".png";
         try {
-            ImageIcon appIcon = new ImageIcon(ImageIO.read(
-                    new File(iconPath)).getScaledInstance(192, 192, 0));
+            ImageIcon appIcon = new ImageIcon(ImageIO.read(MIDletManager.getIcon(appName)).getScaledInstance(192, 192, 0));
             label.setIcon(appIcon);
         } catch (IOException ex) {
-            System.err.println("Can't load app icon: " + iconPath);
+            System.err.println("Can't load icon for " + appName);
         }
-        add(label, getGBC(btnCount, 10, 1));
-        btnCount++;
+        add(label, ActivityCanvas.getGBC(elementCount, 10, 1));
+        elementCount++;
         
         // Button to open the app
         JButton openBtn = new JButton("Open");
@@ -54,14 +51,14 @@ public class MIDletSettings extends JPanel {
         openBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {
-                    new ProcessBuilder(MIDletManager.EMU_ROOT + "wrapper-files/emu.sh", midletName).start();
+                    new ProcessBuilder(J2meWrapper.EMU_ROOT + "wrapper-files/emu.sh", appName).start();
                 } catch (IOException ex) {
                     Logger.getLogger(MIDletSettings.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
         });
-        add(openBtn, getGBC(btnCount, 0, 0));
-        btnCount++;
+        add(openBtn, ActivityCanvas.getGBC(elementCount, 0, 0));
+        elementCount++;
         
         // Button to delete the app
         JButton deleteBtn = new JButton("Delete");
@@ -69,24 +66,24 @@ public class MIDletSettings extends JPanel {
         deleteBtn.setFont(new Font(deleteBtn.getFont().getFontName(), Font.PLAIN, deleteBtn.getPreferredSize().height / 2));
         deleteBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if (!MIDletManager.showConfirmDialog("", "Are you sure to delete \"" + midletName + "\"?")) {
+                if (!ActivityCanvas.showConfirmDialog("", "Are you sure to delete \"" + appName + "\"?")) {
                     return;
                 }
                 try {
-                    new ProcessBuilder(MIDletManager.EMU_ROOT + "wrapper-files/uninstall-j2me-app.sh", midletName).start();
+                    new ProcessBuilder(J2meWrapper.EMU_ROOT + "wrapper-files/uninstall-j2me-app.sh", appName).start();
                     try {
                         Thread.sleep(200);
                     } catch (InterruptedException ex) {
                         Logger.getLogger(MIDletSettings.class.getName()).log(Level.SEVERE, null, ex);
                     }
-                    MIDletManager.setActivity(new MIDletList(), "Installed MIDlets");
+                    ActivityCanvas.setActivity(new MIDletList(), "Installed MIDlets", true);
                 } catch (IOException ex) {
                     Logger.getLogger(MIDletSettings.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
         });
-        add(deleteBtn, getGBC(btnCount, 0, 0));
-        btnCount++;
+        add(deleteBtn, ActivityCanvas.getGBC(elementCount, 0, 0));
+        elementCount++;
         
         // Button to main menu
         JButton backBtn = new JButton("Back");
@@ -94,22 +91,10 @@ public class MIDletSettings extends JPanel {
         backBtn.setFont(new Font(backBtn.getFont().getFontName(), Font.PLAIN, backBtn.getPreferredSize().height / 2));
         backBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                MIDletManager.setActivity(new MIDletList(), "Installed MIDlets");
+                ActivityCanvas.setActivity(new MIDletList(), "Installed MIDlets", true);
             }
         });
-        add(backBtn, getGBC(btnCount, 0, 0));
-        btnCount++;
+        add(backBtn, ActivityCanvas.getGBC(elementCount, 0, 0));
+        elementCount++;
     }
-
-    private GridBagConstraints getGBC(int i, int insets, int spacingWeight) {
-        return new GridBagConstraints(
-                0, i, //cell for top left corner
-                1, 1, //cells to span
-                1, spacingWeight, //spacing weight
-                GridBagConstraints.WEST, //where to anchor the component in the cell
-                GridBagConstraints.HORIZONTAL, //how to fill extra space
-                new Insets(insets, insets, insets, insets), //insets for the cell
-                0, 0);                          //additional padding
-    }
-
 }

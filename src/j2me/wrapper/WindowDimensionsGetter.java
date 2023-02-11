@@ -41,7 +41,7 @@ public class WindowDimensionsGetter extends JFrame implements Runnable {
         System.out.println(w + " " + h);
         
         try {
-            File f = new File(MIDletManager.EMU_ROOT + "wrapper-files/config/window-dimensions.txt");
+            File f = new File(J2meWrapper.EMU_ROOT + "wrapper-files/config/window-dimensions.txt");
             if (!f.exists()) {
                 if (!f.getParentFile().exists()) {
                     f.getParentFile().mkdirs();

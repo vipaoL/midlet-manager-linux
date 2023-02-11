@@ -4,6 +4,7 @@
  */
 package j2me.wrapper;
 
+import j2me.wrapper.util.FileUtils;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
@@ -14,12 +15,8 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import javax.imageio.ImageIO;
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JPanel;
-import static j2me.wrapper.MIDletManager.EMU_ROOT;
-import javax.swing.JLabel;
 
 /**
  *
@@ -47,26 +44,15 @@ public class MIDletList extends JPanel {
         // fill extra space at the top to push menu items down 
         JPanel separator = new JPanel();
         separator.setPreferredSize(new Dimension(200, 0));
-        GridBagConstraints gbc = new GridBagConstraints(
-                0, 0, //cell for top left corner
-                1, 1, //cells to span
-                1, 1, //spacing wieght
-                GridBagConstraints.WEST, //where to anchor the component in the cell
-                GridBagConstraints.HORIZONTAL, //how to fill extra space
-                new Insets(0, 0, 0, 0), //insets for the cell
-                0, 0);                          //additional padding
+        GridBagConstraints gbc = ActivityCanvas.getGBC(0, 0, 1);
         add(separator, gbc);
 
         // get all installed JARs
-        File[] fileList = (new File(EMU_ROOT + "apps")).listFiles(new FilenameFilter() {
-            public boolean accept(File file, String name) {
-                return name.toLowerCase().endsWith(".jar");
-            }
-        });
+        File[] installedJars = FileUtils.getInstalledJars();
 
         // add a button for each app
-        for (int i = 0; i < fileList.length; i++) {
-            String name = fileList[i].getName();
+        for (int i = cellsOnTop; i < installedJars.length; i++) {
+            String name = installedJars[i].getName();
             if (name.endsWith(".jar")) {
                 name = name.substring(0, name.length() - 4);
             }
@@ -79,44 +65,28 @@ public class MIDletList extends JPanel {
                     appBtn.getPreferredSize().height / 4));
 
             // try to load and set app icon
-            String iconPath = EMU_ROOT + "apps/" + midletName + ".png";
+            String iconPath = J2meWrapper.EMU_ROOT + "apps/" + midletName + ".png";
             try {
                 int iconScale = MIDletManager.BTN_H / 96;
-                ImageIcon icon = new ImageIcon(ImageIO.read(new File(iconPath))
-                        .getScaledInstance(96 * iconScale, 96 * iconScale, 0));
-                appBtn.setIcon(icon);
+                appBtn.setIcon(FileUtils.getScaledIcon(new File(iconPath), 96 * iconScale));
             } catch (IOException ex) {
-                System.err.println("icon not found:" + iconPath);
+                System.err.println("Icon not found:" + iconPath);
             }
             // add action to open app settings on click
             appBtn.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    MIDletManager.setActivity(new MIDletSettings(midletName), midletName + " - settings");
+                    ActivityCanvas.setActivity(new MIDletSettings(midletName), midletName + " - settings", false);
                 }
             });
             // set where to place the button
-            gbc = new GridBagConstraints(
-                    0, i + cellsOnTop, //cell for top left corner
-                    1, 1, //cells to span
-                    1, 0, //spacing wieght
-                    GridBagConstraints.WEST, //where to anchor the component in the cell
-                    GridBagConstraints.HORIZONTAL, //how to fill extra space
-                    new Insets(0, 0, 0, 0), //insets for the cell
-                    0, 0);                          //additional padding
+            gbc = ActivityCanvas.getGBC(i, 0, 0);
             add(appBtn, gbc);
         }
 
         JButton exitBtn = new JButton("Exit");
         exitBtn.setPreferredSize(new Dimension(200, 60));
         exitBtn.setFont(new Font(exitBtn.getFont().getFontName(), Font.PLAIN, exitBtn.getPreferredSize().height / 2));
-        gbc = new GridBagConstraints(
-                0, fileList.length + cellsOnTop, //cell for top left corner
-                1, 1, //cells to span
-                1, 0, //spacing wieght
-                GridBagConstraints.WEST, //where to anchor the component in the cell
-                GridBagConstraints.HORIZONTAL, //how to fill extra space
-                new Insets(0, 0, 0, 0), //insets for the cell
-                0, 0);                          //additional padding
+        gbc = ActivityCanvas.getGBC(installedJars.length + cellsOnTop, 0, 0);
         exitBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 System.exit(0);

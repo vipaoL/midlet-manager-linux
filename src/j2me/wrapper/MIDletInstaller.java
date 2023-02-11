@@ -5,29 +5,32 @@
  */
 package j2me.wrapper;
 
+import j2me.wrapper.util.FileUtils;
 import static j2me.wrapper.util.FileUtils.*;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Properties;
 import java.util.jar.Attributes;
-import java.util.jar.JarFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
-import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -40,8 +43,7 @@ import javax.swing.JTextArea;
  * @author vipaol
  */
 public class MIDletInstaller {
-
-    Path jarPath = null;
+    Path pathToJar = null;
     String midletName = "noname";
     String midletVendor = "nobody";
     String midletVersion = "";
@@ -50,41 +52,18 @@ public class MIDletInstaller {
     String midletDescription = "";
     boolean isAlreadyInstalled = false;
     File tmpFile = createTempFile("midlet-installer-buffer");
-    boolean doNotAskInstall = false;
+    public static boolean doNotAskInstall = false;
+    Path targetPath = null;
 
-    public MIDletInstaller(String[] args) throws IOException {
-        String path;
-        if (args.length == 2) {
-            path = args[1];
-        } else {
-            path = args[2];
-            if (args[1].equals("-y")) {
-                doNotAskInstall = true;
-            }
-        }
+    public MIDletInstaller(String path) throws IOException {
+        pathToJar = Paths.get(path);
         System.out.println(J2meWrapper.OS_NAME);
-        jarPath = Paths.get(path);
-        Attributes manifestValues;
-
-        try {
-            JarFile jarfile = new JarFile(jarPath.toFile());
-            manifestValues = jarfile.getManifest().getMainAttributes();
-        } catch (IOException ex) {
-            Logger.getLogger(MIDletInstaller.class.getName()).log(Level.SEVERE, null, ex);
-            throw new IOException("Could not read jar");
-        } catch (NullPointerException ex) {
-            throw new NullPointerException("Could not read manifest");
-        }
+        Attributes manifestValues = FileUtils.getJarManifestValues(pathToJar);
         midletName = manifestValues.getValue("MIDlet-Name");
         midletVendor = manifestValues.getValue("MIDlet-Vendor");
         midletVersion = manifestValues.getValue("MIDlet-Version");
         iconPath = manifestValues.getValue("MIDlet-Icon");
         midletDescription = manifestValues.getValue("MIDlet-Description");
-        
-        // check if the midlet is already installed
-        if (new File(Paths.get(MIDletManager.APPS_DIR).resolve(midletName + ".jar").toUri()).exists()) {
-            isAlreadyInstalled = true;
-        }
 
         for (int i = 1; true; i++) {
             String midletProps = manifestValues.getValue("MIDlet-" + i);
@@ -95,7 +74,7 @@ public class MIDletInstaller {
         }
         
         if (midlets.isEmpty()) {
-            MIDletManager.showError("Could not find \"MIDlet-1\" value in the manifest. Are you sure it is a J2ME app?");
+            ActivityCanvas.showError("Could not find \"MIDlet-1\" entry in the manifest. Are you sure it is a J2ME app?");
             System.exit(0);
         }
 
@@ -103,7 +82,7 @@ public class MIDletInstaller {
             iconPath = midlets.get(0).iconPath;
         }
         try {
-            extractFile(jarPath, iconPath, tmpFile.toPath());
+            extractFile(pathToJar, iconPath, tmpFile.toPath());
         } catch (IOException | NullPointerException ex) {
             Logger.getLogger(MIDletInstaller.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -111,21 +90,24 @@ public class MIDletInstaller {
         if (doNotAskInstall) {
             System.out.println("Set \"-y\", installing without dialog");
             install();
-            MIDletManager.createMIDletShortcut(midletName);
+            createMIDletShortcut(midletName);
             System.out.println("Done!");
             System.exit(0);
         }
-        new MIDletManager();
         
-        if (!isAlreadyInstalled) {
-            MIDletManager.inst.setTitle("Install " + midletName);
+        targetPath = Paths.get(J2meWrapper.APPS_DIR).resolve(midletName + ".jar");
+        
+        // check if the midlet is already installed
+        if (targetPath.toFile().exists()) {
+            isAlreadyInstalled = true;
+            System.out.println("exists");
         } else {
-            MIDletManager.inst.setTitle("Update " + midletName);
+            System.out.println(targetPath);
         }
         
-        MIDletManager.inst.setContentPane((JPanel) new InstallerScreen());
-        MIDletManager.inst.pack();
-        MIDletManager.inst.setVisible(true);
+        String title = isAlreadyInstalled ? "Update " + midletName : "Install " + midletName;
+        
+        ActivityCanvas.setActivity(new InstallerScreen(), title, false);
     }
 
     boolean install() {
@@ -138,18 +120,56 @@ public class MIDletInstaller {
             }
             try {
                 if (iconPath != null) {
-                    extractFile(jarPath, iconPath, Paths.get(MIDletManager.APPS_DIR).resolve(midletName + ".png"));
+                    extractFile(pathToJar, iconPath, Paths.get(J2meWrapper.APPS_DIR).resolve(midletName + ".png"));
                 }
             } catch (IOException ex) {
-                MIDletManager.showError("Failed to extract icon " + iconPath);
+                ActivityCanvas.showError("Failed to extract icon " + iconPath);
             }
-            Files.copy(jarPath, Paths.get(MIDletManager.APPS_DIR).resolve(midletName + ".jar"), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(pathToJar, targetPath, StandardCopyOption.REPLACE_EXISTING);
             return true;
         } catch (IOException ex) {
             Logger.getLogger(MIDletInstaller.class.getName()).log(Level.SEVERE, null, ex);
-            MIDletManager.showError("Failed to copy jar");
+            ActivityCanvas.showError("Failed to copy jar");
             return false;
         }
+    }
+    
+    public static boolean createMIDletShortcut(String midletName) {
+        try {
+            Properties config = new Properties();
+            config.load(new FileInputStream(Paths.get("./config/config.txt").toFile()));
+            String resPath = "/shortcut-templates/midlet-shortcut-template-" + J2meWrapper.OS_NAME.toLowerCase() + ".desktop";
+            System.out.print("Your OS is " + J2meWrapper.OS_NAME + " => ");
+            System.out.println("trying to read in resources " + resPath);
+            File tmpFile = createTempFile("midlet-shortcut");
+            
+            j2me.wrapper.util.FileUtils.exportResource(resPath, tmpFile.getPath().toString());
+            InputStream is = new FileInputStream(new File(tmpFile.toURI()));
+            BufferedReader br = new BufferedReader(new InputStreamReader(is));
+            String firstLine = br.readLine();
+            String systemShortcutsPath = config.getProperty("SYSTEM_SHORTCUTS_DIR",
+                    firstLine.split(":::")[1].trim().replace("replace_with_user_home", System.getProperty("user.home")))
+                    .replace("$HOME", System.getProperty("user.home"));
+            Path midletShortcutPath = Paths.get(systemShortcutsPath).resolve(midletName + "-j2mew.desktop").normalize();
+            assert (!midletName.equals(""));
+            assert (Paths.get(systemShortcutsPath).normalize() != midletShortcutPath);
+
+            String[][] mask = {
+                {"replace_with_app_name", midletName},
+                {"replace_with_install_dir", Paths.get(J2meWrapper.EMU_ROOT).toAbsolutePath().normalize().toString()},
+                {firstLine + "\n", ""}
+            };
+            replaceInFile(tmpFile.toPath(), mask);
+            System.out.println("Copying " + tmpFile.toPath() + " to " + midletShortcutPath);
+            Files.copy(tmpFile.toPath(), midletShortcutPath, StandardCopyOption.REPLACE_EXISTING);
+
+            return true;
+        } catch (URISyntaxException ex) {
+            Logger.getLogger(MIDletManager.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(MIDletManager.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return false;
     }
 
     public class InstallerScreen extends JPanel {
@@ -167,13 +187,12 @@ public class MIDletInstaller {
             label.setAlignmentX(Component.CENTER_ALIGNMENT);
 
             try {
-                ImageIcon appIcon = new ImageIcon(ImageIO.read(
-                        tmpFile).getScaledInstance(96, 96, 0));
+                ImageIcon appIcon = FileUtils.getScaledIcon(tmpFile, 96);
                 label.setIcon(appIcon);
             } catch (IOException | NullPointerException ex) {
                 System.err.println("Can't load app icon");
             }
-            topPanel.add(leftJustify(label));//, getGBC(btnCount, 10, 1));
+            topPanel.add(ActivityCanvas.leftJustify(label));//, getGBC(btnCount, 10, 1));
             //btnCount++;
             
             JLabel question = new JLabel();
@@ -184,19 +203,29 @@ public class MIDletInstaller {
             }
             question.setFont(new Font(question.getFont().getFontName(), Font.PLAIN, question.getFont().getSize()));
             question.setAlignmentX(Component.LEFT_ALIGNMENT);
-            topPanel.add(leftJustify(question));//, getGBC(btnCount, 10, 1));
+            topPanel.add(ActivityCanvas.leftJustify(question));//, getGBC(btnCount, 10, 1));
             //btnCount++;
             
-            JLabel installedVersion = new JLabel("Version ?.?.? is already installed");
-            installedVersion.setFont(new Font(installedVersion.getFont().getFontName(), Font.PLAIN, installedVersion.getFont().getSize()));
-            installedVersion.setAlignmentX(Component.LEFT_ALIGNMENT);
-            //topPanel.add(leftJustify(installedVersion));//, getGBC(btnCount, 10, 1));
-            //btnCount++;
+            if (isAlreadyInstalled) {
+                String installedVersionNumber = "?.?.?";
+                try {
+                    installedVersionNumber = FileUtils.getJarManifestValues(targetPath).getValue("MIDlet-Version");
+                } catch (IOException ex) {
+                    Logger.getLogger(MIDletInstaller.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (NullPointerException ex) {
+                    Logger.getLogger(MIDletInstaller.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                JLabel installedVersion = new JLabel("Version " + installedVersionNumber + " is already installed");
+                installedVersion.setFont(new Font(installedVersion.getFont().getFontName(), Font.PLAIN, installedVersion.getFont().getSize()));
+                installedVersion.setAlignmentX(Component.LEFT_ALIGNMENT);
+                topPanel.add(ActivityCanvas.leftJustify(installedVersion));//, getGBC(btnCount, 10, 1));
+                //btnCount++;
+            }
             
             JLabel vendorName = new JLabel("Vendor: " + midletVendor);
             vendorName.setFont(new Font(vendorName.getFont().getFontName(), Font.PLAIN, vendorName.getFont().getSize()));
             vendorName.setAlignmentX(Component.LEFT_ALIGNMENT);
-            topPanel.add(leftJustify(vendorName));//, getGBC(btnCount, 10, 1));
+            topPanel.add(ActivityCanvas.leftJustify(vendorName));//, getGBC(btnCount, 10, 1));
             //btnCount++;
             
             // midlet description
@@ -213,10 +242,10 @@ public class MIDletInstaller {
             topPanel.add(descr);//, getGBC(btnCount, 10, 1));
             //btnCount++;
             
-            add(topPanel, getGBC(componentsCount, 10, 0));
+            add(topPanel, ActivityCanvas.getGBC(componentsCount, 10, 0));
             componentsCount++;
             
-            add(new JPanel(), getGBC(componentsCount, 10, 1));
+            add(new JPanel(), ActivityCanvas.getGBC(componentsCount, 10, 1));
             componentsCount++;
             
             JPanel btnPanel = new JPanel(new GridLayout(1, 2));
@@ -229,14 +258,10 @@ public class MIDletInstaller {
             installBtn.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     if (install()) {
-                        MIDletManager.inst.setTitle("Installed successfully");
-                        if (isAlreadyInstalled) {
-                            MIDletManager.inst.setTitle("Updated successfully");
-                        }
-                        MIDletManager.inst.setContentPane(new SuccessScreen(midletName, Paths.get(MIDletManager.APPS_DIR).resolve(midletName + ".png").toFile()));
-                        MIDletManager.inst.pack();
+                        createMIDletShortcut(midletName);
+                        String successTitle = isAlreadyInstalled ? "Updated successfully" : "Installed successfully";
+                        ActivityCanvas.setActivity(new SuccessScreen(midletName), successTitle, false);
                     }
-                    MIDletManager.createMIDletShortcut(midletName);
                 }
             });
             btnPanel.add(installBtn);
@@ -253,57 +278,13 @@ public class MIDletInstaller {
             });
             btnPanel.add(cancelBtn);
             
-            add(btnPanel, getGBC(componentsCount, 0, 0));
+            add(btnPanel, ActivityCanvas.getGBC(componentsCount, 0, 0));
             componentsCount++;
         }
     }
     
-    private Component leftJustify(Component component) {
-        Box b = Box.createHorizontalBox();
-        b.add(component);
-        b.add(Box.createHorizontalGlue());
-        return b;
-    }
-    
-    private GridBagConstraints getGBC(int i, int insets, int spacingWeight) {
-            return new GridBagConstraints(
-                    0, i, //cell for top left corner
-                    1, 1, //cells to span
-                    1, spacingWeight, //spacing weight
-                    GridBagConstraints.WEST, //where to anchor the component in the cell
-                    GridBagConstraints.HORIZONTAL, //how to fill extra space
-                    new Insets(insets, insets, insets, insets), //insets for the cell
-                    0, 0);                          //additional padding
-        }
-
-    public class MIDlet {
-
-        public int index;
-        public String name = null;
-        public String iconPath = null;
-        public String mainClass = null;
-
-        public MIDlet(String manifestEntryValue) {
-            if (manifestEntryValue.startsWith("MIDlet-")) {
-                manifestEntryValue = manifestEntryValue.split(":")[1];
-            }
-            String[] params = manifestEntryValue.trim().split(",");
-            if (params.length > 2) {
-                midletName = params[0].trim();
-                iconPath = params[1].trim();
-                if (iconPath.equals("")) {
-                    iconPath = null;
-                }
-                mainClass = params[2].trim();
-            } else {
-                midletName = params[0].trim();
-                mainClass = params[1].trim();
-            }
-        }
-    }
-    
     public class SuccessScreen extends JPanel {
-        public SuccessScreen(String midletName, File icon) {
+        public SuccessScreen(String appName) {
             setLayout(new GridBagLayout());
             
             int componentsCount = 0;
@@ -312,33 +293,33 @@ public class MIDletInstaller {
             topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.Y_AXIS));
             
             // icon and name
-            JLabel label = new JLabel(midletName, JLabel.CENTER);
+            JLabel label = new JLabel(appName, JLabel.CENTER);
             label.setFont(new Font(label.getFont().getFontName(), Font.PLAIN, label.getFont().getSize() * 2));
             label.setAlignmentX(Component.CENTER_ALIGNMENT);
             
             try {
                 ImageIcon appIcon = new ImageIcon(ImageIO.read(
-                        icon).getScaledInstance(96, 96, 0));
+                        MIDletManager.getIcon(appName)).getScaledInstance(96, 96, 0));
                 label.setIcon(appIcon);
             } catch (IOException | NullPointerException ex) {
                 System.err.println("Can't load app icon");
             }
-            topPanel.add(leftJustify(label));
+            topPanel.add(ActivityCanvas.leftJustify(label));
             
             JLabel successMessage = new JLabel();
             if (!isAlreadyInstalled) {
-                successMessage.setText("Installed \"" + midletName + "\" " + midletVersion + " successfully");
+                successMessage.setText("Installed \"" + appName + "\" " + midletVersion + " successfully");
             } else {
-                successMessage.setText("Updated \"" + midletName + "\" to v" + midletVersion);
+                successMessage.setText("Updated \"" + appName + "\" to v" + midletVersion);
             }
             successMessage.setFont(new Font(successMessage.getFont().getFontName(), Font.PLAIN, successMessage.getFont().getSize()));
             successMessage.setAlignmentX(Component.LEFT_ALIGNMENT);
-            topPanel.add(leftJustify(successMessage));
+            topPanel.add(ActivityCanvas.leftJustify(successMessage));
 
-            add(topPanel, getGBC(componentsCount, 10, 0));
+            add(topPanel, ActivityCanvas.getGBC(componentsCount, 10, 0));
             componentsCount++;
             
-            add(new JPanel(), getGBC(componentsCount, 10, 1));
+            add(new JPanel(), ActivityCanvas.getGBC(componentsCount, 10, 1));
             componentsCount++;
             
             JPanel btnPanel = new JPanel(new GridLayout(1, 2));
@@ -351,7 +332,7 @@ public class MIDletInstaller {
             openBtn.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     try {
-                        new ProcessBuilder(MIDletManager.EMU_ROOT + "wrapper-files/emu.sh", midletName).start();
+                        new ProcessBuilder(J2meWrapper.EMU_ROOT + "wrapper-files/emu.sh", appName).start();
                     } catch (IOException ex) {
                         Logger.getLogger(MIDletSettings.class.getName()).log(Level.SEVERE, null, ex);
                         ex.printStackTrace();
@@ -372,7 +353,7 @@ public class MIDletInstaller {
             });
             btnPanel.add(cancelBtn);
             
-            add(btnPanel, getGBC(componentsCount, 0, 0));
+            add(btnPanel, ActivityCanvas.getGBC(componentsCount, 0, 0));
         }
     }
 }

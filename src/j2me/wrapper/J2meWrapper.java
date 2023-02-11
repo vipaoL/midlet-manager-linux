@@ -4,7 +4,7 @@
  */
 package j2me.wrapper;
 
-import static j2me.wrapper.MIDletManager.showError;
+import static j2me.wrapper.ActivityCanvas.showError;
 import java.io.IOException;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -15,6 +15,8 @@ import javax.swing.UnsupportedLookAndFeelException;
  */
 public class J2meWrapper {
 
+    public static String EMU_ROOT = "../";
+    static String APPS_DIR = EMU_ROOT + "apps/";
     static String OS_NAME = System.getProperty("os.name");
     static boolean headlessMode = false;
 
@@ -32,20 +34,32 @@ public class J2meWrapper {
 
         switch (args.length) {
             case 0:
-                new MIDletManager("");
+                new MIDletManager();
                 break;
-            case 1:
+            case 1: // get-dimensions
                 if (args[0].equals("get-dimensions")) {
                     new WindowDimensionsGetter();
                 } else {
-                    new MIDletManager(args[0]);
+                    ActivityCanvas.setActivity(new MIDletSettings(args[0]), args[0] + " - settings", false);
                 }
                 break;
             default:
                 String command = args[0];
                 if (command.equals("install")) {
+                    String path = null;
+                    switch (args.length) {
+                        case 2: // install <path>
+                            path = args[1];
+                            break;
+                        case 3: // install -y <path>
+                            path = args[2];
+                            if (args[1].equals("-y")) {
+                                MIDletInstaller.doNotAskInstall = true;
+                            }
+                            break;
+                    }
                     try {
-                        new MIDletInstaller(args);
+                        new MIDletInstaller(path);
                     } catch (IOException | NullPointerException ex) {
                         String errorMessage = ex.getMessage();
                         errorMessage += "\n\nDebug info:\n";

@@ -5,11 +5,13 @@
  */
 package j2me.wrapper.util;
 
+import j2me.wrapper.J2meWrapper;
 import j2me.wrapper.MIDletInstaller;
-import j2me.wrapper.MIDletManager;
+import java.awt.Image;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -21,16 +23,18 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.jar.Attributes;
+import java.util.jar.JarFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jdk.jfr.internal.SecuritySupport;
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
 
 /**
  *
  * @author vipaol
  */
 public class FileUtils {
-
     public static File createTempFile(String prefix) {
         File tmpFile = null;
         try {
@@ -88,5 +92,32 @@ public class FileUtils {
             stream.close();
             resStreamOut.close();
         }
+    }
+    
+    public static ImageIcon getScaledIcon(File iconFile, int sizePx) throws IOException {
+        Image icon = ImageIO.read(iconFile).getScaledInstance(sizePx, sizePx, 0);
+        return new ImageIcon(icon);
+    }
+    
+    public static Attributes getJarManifestValues(Path pathToJar) throws IOException, NullPointerException {
+        try {
+            JarFile jarfile = new JarFile(pathToJar.toFile());
+            return jarfile.getManifest().getMainAttributes();
+        } catch (IOException ex) {
+            Logger.getLogger(MIDletInstaller.class.getName()).log(Level.SEVERE, null, ex);
+            throw new IOException("Could not read jar");
+        } catch (NullPointerException ex) {
+            throw new NullPointerException("Could not read manifest");
+        }
+    }
+    
+    public static File[] getInstalledJars() {
+        FilenameFilter filter = new FilenameFilter() {
+            public boolean accept(File file, String name) {
+                return name.toLowerCase().endsWith(".jar");
+            }
+        };
+        File appsDir = new File(J2meWrapper.EMU_ROOT + "apps");
+        return appsDir.listFiles(filter);
     }
 }
