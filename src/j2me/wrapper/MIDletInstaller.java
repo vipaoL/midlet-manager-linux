@@ -87,6 +87,8 @@ public class MIDletInstaller {
             Logger.getLogger(MIDletInstaller.class.getName()).log(Level.SEVERE, null, ex);
         }
         
+        targetPath = Paths.get(J2meWrapper.APPS_DIR).resolve(midletName + ".jar");
+        
         if (doNotAskInstall) {
             System.out.println("Set \"-y\", installing without dialog");
             install();
@@ -94,8 +96,6 @@ public class MIDletInstaller {
             System.out.println("Done!");
             System.exit(0);
         }
-        
-        targetPath = Paths.get(J2meWrapper.APPS_DIR).resolve(midletName + ".jar");
         
         // check if the midlet is already installed
         if (targetPath.toFile().exists()) {
