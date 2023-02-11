@@ -25,6 +25,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.BoxLayout;
@@ -104,29 +105,31 @@ public class MIDletManager extends JFrame {
 
     public static boolean createMIDletShortcut(String midletName) {
         try {
+            Properties config = new Properties();
+            config.load(new FileInputStream(Paths.get("./config/config.txt").toFile()));
             String resPath = "/shortcut-templates/midlet-shortcut-template-" + J2meWrapper.OS_NAME.toLowerCase() + ".desktop";
             System.out.print("Your OS is " + J2meWrapper.OS_NAME + " => ");
-            System.out.println("trying to read (in resources) " + resPath);
-            //URI shortcutTemplateUrl = inst.getClass().getResource(resPath).toURI();
+            System.out.println("trying to read in resources " + resPath);
             File tmpFile = createTempFile("midlet-shortcut");
-            //System.out.println("Copying " + shortcutTemplateUrl.toString() + " to " + tmpFile.toURI().toString());
             
             j2me.wrapper.util.FileUtils.exportResource(resPath, tmpFile.getPath().toString());
-            //Files.copy(Paths.get(shortcutTemplateUrl), tmpFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            //System.getProperty("user.home");
             InputStream is = new FileInputStream(new File(tmpFile.toURI()));
             BufferedReader br = new BufferedReader(new InputStreamReader(is));
             String firstLine = br.readLine();
-            String systemShortcutsPath = firstLine.split(":::")[1].trim().replace("replace_with_user_home", System.getProperty("user.home"));
-            Path midletShortcutPath = Paths.get(systemShortcutsPath).resolve(midletName + "_J2ME.desktop").normalize();
+            String systemShortcutsPath = config.getProperty("SYSTEM_SHORTCUTS_DIR",
+                    firstLine.split(":::")[1].trim().replace("replace_with_user_home", System.getProperty("user.home")))
+                    .replace("$HOME", System.getProperty("user.home"));
+            Path midletShortcutPath = Paths.get(systemShortcutsPath).resolve(midletName + "-j2mew.desktop").normalize();
             assert (!midletName.equals(""));
             assert (Paths.get(systemShortcutsPath).normalize() != midletShortcutPath);
 
-            String[][] mask = {{"replace_with_app_name", midletName},
-            {"replace_with_install_dir", Paths.get(EMU_ROOT).toAbsolutePath().normalize().toString()},
-            {firstLine + "\n", ""}};
+            String[][] mask = {
+                {"replace_with_app_name", midletName},
+                {"replace_with_install_dir", Paths.get(EMU_ROOT).toAbsolutePath().normalize().toString()},
+                {firstLine + "\n", ""}
+            };
             replaceInFile(tmpFile.toPath(), mask);
-
+            System.out.println("Copying " + tmpFile.toPath() + " to " + midletShortcutPath);
             Files.copy(tmpFile.toPath(), midletShortcutPath, StandardCopyOption.REPLACE_EXISTING);
 
             return true;
