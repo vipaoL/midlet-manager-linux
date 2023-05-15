@@ -49,6 +49,7 @@ public class MIDletList extends JPanel {
 
         // get all installed JARs
         File[] installedJars = FileUtils.getInstalledJars();
+        if (installedJars == null) installedJars = new File[0];
 
         // add a button for each app
         for (int i = cellsOnTop; i < installedJars.length; i++) {
