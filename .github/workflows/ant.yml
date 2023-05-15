@@ -24,7 +24,7 @@ jobs:
     - name: Build with Ant
       run: ant -noinput -buildfile build.xml
     - name: Upload jar
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: j2me-wrapper
-        path: ${{ github.workspace }}/midlet-manager-linux/midlet-manager-linux/dist/j2me-wrapper.jar
+        path: ${{ github.workspace }}/dist/j2me-wrapper.jar
