@@ -48,7 +48,7 @@ public class FileUtils {
     }
 
     public static void extractFile(Path zipFile, String fileName, Path outputFile) throws IOException {
-        try (FileSystem fileSystem = FileSystems.newFileSystem(zipFile)) {
+        try (FileSystem fileSystem = FileSystems.newFileSystem(zipFile, (ClassLoader) null)) {
             Path fileToExtract = fileSystem.getPath(fileName);
             System.out.println("extracting " + fileToExtract.toUri() + " to " + outputFile.toAbsolutePath());
             Files.copy(fileToExtract, outputFile, StandardCopyOption.REPLACE_EXISTING);
