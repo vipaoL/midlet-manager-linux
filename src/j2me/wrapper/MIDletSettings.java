@@ -51,7 +51,7 @@ public class MIDletSettings extends JPanel {
         openBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {
-                    new ProcessBuilder(J2meWrapper.EMU_ROOT + "wrapper-files/emu.sh", appName).start();
+                    new ProcessBuilder(J2meWrapper.INSTALLATION_DIR + "bin/run-app.sh", appName).start();
                 } catch (IOException ex) {
                     Logger.getLogger(MIDletSettings.class.getName()).log(Level.SEVERE, null, ex);
                 }
@@ -70,7 +70,7 @@ public class MIDletSettings extends JPanel {
                     return;
                 }
                 try {
-                    new ProcessBuilder(J2meWrapper.EMU_ROOT + "wrapper-files/uninstall-j2me-app.sh", appName).start();
+                    new ProcessBuilder(J2meWrapper.INSTALLATION_DIR + "bin/uninstall-j2me-app.sh", appName).start();
                     try {
                         Thread.sleep(200);
                     } catch (InterruptedException ex) {

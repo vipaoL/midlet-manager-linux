@@ -15,8 +15,8 @@ import javax.swing.UnsupportedLookAndFeelException;
  */
 public class J2meWrapper {
 
-    public static String EMU_ROOT = "../";
-    static String APPS_DIR = EMU_ROOT + "apps/";
+    public static String INSTALLATION_DIR = "../";
+    static String APPS_DIR = INSTALLATION_DIR + "apps/";
     static String OS_NAME = System.getProperty("os.name");
     static boolean headlessMode = false;
 

@@ -137,7 +137,7 @@ public class MIDletInstaller {
     public static boolean createMIDletShortcut(String midletName) {
         try {
             Properties config = new Properties();
-            config.load(new FileInputStream(Paths.get("./config/config.txt").toFile()));
+            config.load(new FileInputStream(Paths.get(J2meWrapper.INSTALLATION_DIR + "config/config.txt").toFile()));
             String resPath = "/shortcut-templates/midlet-shortcut-template-" + J2meWrapper.OS_NAME.toLowerCase() + ".desktop";
             System.out.print("Your OS is " + J2meWrapper.OS_NAME + " => ");
             System.out.println("trying to read in resources " + resPath);
@@ -156,7 +156,7 @@ public class MIDletInstaller {
 
             String[][] mask = {
                 {"replace_with_app_name", midletName},
-                {"replace_with_install_dir", Paths.get(J2meWrapper.EMU_ROOT).toAbsolutePath().normalize().toString()},
+                {"replace_with_install_dir", Paths.get(J2meWrapper.INSTALLATION_DIR).toAbsolutePath().normalize().toString()},
                 {firstLine + "\n", ""}
             };
             replaceInFile(tmpFile.toPath(), mask);
@@ -332,7 +332,7 @@ public class MIDletInstaller {
             openBtn.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     try {
-                        new ProcessBuilder(J2meWrapper.EMU_ROOT + "wrapper-files/emu.sh", appName).start();
+                        new ProcessBuilder(J2meWrapper.INSTALLATION_DIR + "bin/run-app.sh", appName).start();
                     } catch (IOException ex) {
                         Logger.getLogger(MIDletSettings.class.getName()).log(Level.SEVERE, null, ex);
                         ex.printStackTrace();

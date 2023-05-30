@@ -66,7 +66,7 @@ public class MIDletList extends JPanel {
                     appBtn.getPreferredSize().height / 4));
 
             // try to load and set app icon
-            String iconPath = J2meWrapper.EMU_ROOT + "apps/" + midletName + ".png";
+            String iconPath = J2meWrapper.INSTALLATION_DIR + "apps/" + midletName + ".png";
             try {
                 int iconScale = MIDletManager.BTN_H / 96;
                 appBtn.setIcon(FileUtils.getScaledIcon(new File(iconPath), 96 * iconScale));

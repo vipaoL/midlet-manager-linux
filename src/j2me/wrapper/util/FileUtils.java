@@ -117,7 +117,7 @@ public class FileUtils {
                 return name.toLowerCase().endsWith(".jar");
             }
         };
-        File appsDir = new File(J2meWrapper.EMU_ROOT + "apps");
+        File appsDir = new File(J2meWrapper.INSTALLATION_DIR + "apps");
         return appsDir.listFiles(filter);
     }
 }

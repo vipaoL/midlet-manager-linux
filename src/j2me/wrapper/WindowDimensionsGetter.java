@@ -28,7 +28,7 @@ public class WindowDimensionsGetter extends JFrame implements Runnable {
     public WindowDimensionsGetter() {
         System.out.println("Getting window size...");
         //setSize(480, 640);
-        setMinimumSize(new Dimension(480, 640));
+        setMinimumSize(new Dimension(100, 200));
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         add(canvas);
         setVisible(true);
@@ -50,7 +50,7 @@ public class WindowDimensionsGetter extends JFrame implements Runnable {
     boolean saveDimensions(int w, int h) {
         System.out.println(w + " " + h);
         try {
-            File f = new File(J2meWrapper.EMU_ROOT + "wrapper-files/config/window-dimensions.txt");
+            File f = new File(J2meWrapper.INSTALLATION_DIR + "config/window-dimensions.txt");
             if (!f.exists()) {
                 if (!f.getParentFile().exists()) {
                     f.getParentFile().mkdirs();
