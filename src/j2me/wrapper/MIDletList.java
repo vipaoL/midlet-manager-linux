@@ -50,9 +50,10 @@ public class MIDletList extends JPanel {
         // get all installed JARs
         File[] installedJars = FileUtils.getInstalledJars();
         if (installedJars == null) installedJars = new File[0];
+        System.out.println(installedJars.length + " installed apps found");
 
         // add a button for each app
-        for (int i = cellsOnTop; i < installedJars.length; i++) {
+        for (int i = 0; i < installedJars.length; i++) {
             String name = installedJars[i].getName();
             if (name.endsWith(".jar")) {
                 name = name.substring(0, name.length() - 4);
@@ -80,7 +81,7 @@ public class MIDletList extends JPanel {
                 }
             });
             // set where to place the button
-            gbc = ActivityCanvas.getGBC(i, 0, 0);
+            gbc = ActivityCanvas.getGBC(cellsOnTop + i, 0, 0);
             add(appBtn, gbc);
         }
 
